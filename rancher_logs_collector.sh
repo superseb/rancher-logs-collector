@@ -6,7 +6,7 @@ type rancher >/dev/null 2>&1 || { echo >&2 "I require rancher CLI but it's not i
 # TODO: Print instructions for downloading/setting up CLI.
 
 
-LOGS_DIR=`mktemp -d -t rancher.logs`
+LOGS_DIR=`mktemp -d -t rancher.logs.XXXXXX`
 
 echo "Collecting logs to directory: ${LOGS_DIR}"
 
