@@ -16,15 +16,15 @@ cd ${LOGS_DIR}
 
 rancher host ls -a > rancher_host.log 2>&1
 rancher ps -s -a > rancher_ps_s_a.log 2>&1
-rancher ps -c -a > rancher_ps_c_a.log 2>&1
+rancher ps -c -a -s > rancher_ps_c_a_s.log 2>&1
 
 CONTAINERS=`rancher ps -c -a -s`
 
 echo "Collecting rancher-agent logs"
-echo "${CONTAINERS}" | grep rancher-agent | awk '{system("rancher logs --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
+echo "${CONTAINERS}" | grep rancher-agent | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
 echo "Collecting ipsec logs"
-echo "${CONTAINERS}" | grep ipsec | awk '{system("rancher logs --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
+echo "${CONTAINERS}" | grep ipsec | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
 echo "Collecting ipsec information"
 IPSEC_ROUTERS=`echo "${CONTAINERS}" | grep ipsec-router | awk '{print $1}'`
@@ -33,7 +33,7 @@ for ipsec_router_id in ${IPSEC_ROUTERS}; do
 done
 
 echo "Collecting network-services logs"
-echo "${CONTAINERS}" | grep network-services | awk '{system("rancher logs --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
+echo "${CONTAINERS}" | grep network-services | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
 echo "Collecting other networking information"
 NM_CONTAINERS=`echo "$CONTAINERS" | grep network-services-network-manager | awk '{print $1}'`
@@ -42,10 +42,10 @@ for network_manager_id in ${NM_CONTAINERS}; do
 done
 
 echo "Collecting healthcheck logs"
-echo "${CONTAINERS}" | grep healthcheck | awk '{system("rancher logs --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
+echo "${CONTAINERS}" | grep healthcheck | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
 echo "Collecting scheduler logs"
-echo "${CONTAINERS}" | grep scheduler | awk '{system("rancher logs --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
+echo "${CONTAINERS}" | grep scheduler | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
 
 echo "Please compress the folder ${LOGS_DIR} and send them across to Rancher Support"
