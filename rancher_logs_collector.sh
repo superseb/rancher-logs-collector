@@ -47,7 +47,7 @@ echo "${CONTAINERS}" | grep healthcheck | awk '{system("rancher logs -t --tail=-
 echo "Collecting scheduler logs"
 echo "${CONTAINERS}" | grep scheduler | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
-if [ `rancher environment ls --format='{{.Environment.Orchestration}}'` == "kubernetes" ]; then
+if [ "`rancher environment ls --format='{{.Environment.Orchestration}}'`" == "kubernetes" ]; then
     echo "Collecting kubernetes logs"
     echo "${CONTAINERS}" | grep kubernetes | grep rancher | awk '{system("rancher logs -t --tail=-1 "$1" > "$2"-"$5"-"$1".log 2>&1");}'
 
