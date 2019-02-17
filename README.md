@@ -1,9 +1,9 @@
 # rancher-logs-collector
 
-Step 1: Download and setup Rancher CLI. Make sure this path is added in $PATH.
+The script needs to be downloaded and run directly on the host using the `root` user or using `sudo`.
 
-Step 2: Setup API Keys in Rancher Server.
+## How to use
 
-Step 3: Execute: `rancher config` to specify the URL, Access Key and Secret Key.
-
-Step 4: Collect logs: `./rancher_logs_collector.sh`.
+* Download the script and save as: `rancher_logs_collector.sh`
+* Make sure the script is executable: `chmod +x rancher_logs_collector.sh`
+* Run the script: `./rancher_logs_collector.sh`
