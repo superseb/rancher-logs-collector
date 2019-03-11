@@ -65,7 +65,7 @@ cp /var/log/syslog* /var/log/messages* /var/log/kern* /var/log/docker* /var/log/
 # Discover any server or agent running
 mkdir -p $TMPDIR/rancher/containerinspect
 mkdir -p $TMPDIR/rancher/containerlogs
-RANCHERSERVERS=$(docker ps -a | grep -E "rancher/server:|rancher/server " | awk '{ print $1 }')
+RANCHERSERVERS=$(docker ps -a | grep -E "rancher/server:|rancher/server |rancher/enterprise:|rancher/enterprise " | awk '{ print $1 }')
 RANCHERAGENTS=$(docker ps -a | grep -E "rancher/agent:|rancher/agent " | awk '{ print $1 }')
 
 for RANCHERSERVER in $RANCHERSERVERS; do
