@@ -14,9 +14,13 @@ free -m > $TMPDIR/systeminfo/freem 2>&1
 uptime > $TMPDIR/systeminfo/uptime 2>&1
 dmesg > $TMPDIR/systeminfo/dmesg 2>&1
 df -h > $TMPDIR/systeminfo/dfh 2>&1
+df -i > $TMPDIR/systeminfo/dfi 2>&1
 lsmod > $TMPDIR/systeminfo/lsmod 2>&1
 mount > $TMPDIR/systeminfo/mount 2>&1
 ps aux > $TMPDIR/systeminfo/psaux 2>&1
+if $(command -v lsof >/dev/null 2>&1); then
+  lsof -Pn > $TMPDIR/systeminfo/lsof 2>/dev/null
+fi
 if $(command -v sysctl >/dev/null 2>&1); then
   sysctl -a > $TMPDIR/systeminfo/sysctla 2>/dev/null
 fi
