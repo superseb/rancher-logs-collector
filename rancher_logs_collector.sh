@@ -1,9 +1,32 @@
 #!/bin/bash
+MKTEMP_BASEDIR=""
+DOCKER_LOGOPTS=""
+
+while getopts ":d:s:" opt; do
+  case $opt in
+    d)
+      MKTEMP_BASEDIR="-p ${OPTARG}"
+      ;;
+    s)
+      DOCKER_LOGOPTS="--since ${OPTARG}"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
 
 # Create temp directory
-TMPDIR=$(mktemp -d)
+TMPDIR=$(mktemp -d $MKTEMP_BASEDIR)
 
 # System info
+echo "Collecting systeminfo"
 mkdir -p $TMPDIR/systeminfo
 hostname > $TMPDIR/systeminfo/hostname 2>&1
 hostname -f > $TMPDIR/systeminfo/hostnamefqdn 2>&1
@@ -41,6 +64,7 @@ if [ -f /etc/redhat-release ]; then
 fi
 
 # Docker
+echo "Collecting Docker info"
 mkdir -p $TMPDIR/docker
 docker info > $TMPDIR/docker/dockerinfo 2>&1
 docker ps -a > $TMPDIR/docker/dockerpsa 2>&1
@@ -61,10 +85,12 @@ if $(command -v ifconfig >/dev/null 2>&1); then
 fi
 
 # System logging
+echo "Collecting systemlogs"
 mkdir -p $TMPDIR/systemlogs
 cp /var/log/syslog* /var/log/messages* /var/log/kern* /var/log/docker* /var/log/system-docker* /var/log/audit/* $TMPDIR/systemlogs 2>/dev/null
 
 # Rancher logging
+echo "Collecting Rancher logs"
 # Discover any server or agent running
 mkdir -p $TMPDIR/rancher/containerinspect
 mkdir -p $TMPDIR/rancher/containerlogs
@@ -73,26 +99,28 @@ RANCHERAGENTS=$(docker ps -a | grep -E "rancher/rancher-agent:|rancher/rancher-a
 
 for RANCHERSERVER in $RANCHERSERVERS; do
   docker inspect $RANCHERSERVER > $TMPDIR/rancher/containerinspect/server-$RANCHERSERVER 2>&1
-  docker logs -t $RANCHERSERVER > $TMPDIR/rancher/containerlogs/server-$RANCHERSERVER 2>&1
+  docker logs $DOCKER_LOGOPTS -t $RANCHERSERVER > $TMPDIR/rancher/containerlogs/server-$RANCHERSERVER 2>&1
 done
 
 for RANCHERAGENT in $RANCHERAGENTS; do
   docker inspect $RANCHERAGENT > $TMPDIR/rancher/containerinspect/agent-$RANCHERAGENT 2>&1
-  docker logs -t $RANCHERAGENT > $TMPDIR/rancher/containerlogs/agent-$RANCHERAGENT 2>&1
+  docker logs $DOCKER_LOGOPTS -t $RANCHERAGENT > $TMPDIR/rancher/containerlogs/agent-$RANCHERAGENT 2>&1
 done
 
 # K8s Docker container logging
+echo "Collecting k8s container logging"
 mkdir -p $TMPDIR/k8s/containerlogs
 mkdir -p $TMPDIR/k8s/containerinspect
 KUBECONTAINERS=(etcd etcd-rolling-snapshots kube-apiserver kube-controller-manager kubelet kube-scheduler kube-proxy nginx-proxy)
 for KUBECONTAINER in "${KUBECONTAINERS[@]}"; do
   if [ "$(docker ps -q -f name=$KUBECONTAINER)" ]; then
           docker inspect $KUBECONTAINER > $TMPDIR/k8s/containerinspect/$KUBECONTAINER 2>&1
-	  docker logs -t $KUBECONTAINER > $TMPDIR/k8s/containerlogs/$KUBECONTAINER 2>&1
+	  docker logs $DOCKER_LOGOPTS -t $KUBECONTAINER > $TMPDIR/k8s/containerlogs/$KUBECONTAINER 2>&1
   fi
 done
 
 # System pods
+echo "Collecting system pods logging"
 mkdir -p $TMPDIR/k8s/podlogs
 mkdir -p $TMPDIR/k8s/podinspect
 SYSTEMNAMESPACES=(kube-system kube-public cattle-system cattle-alerting cattle-logging cattle-pipeline ingress-nginx cattle-prometheus)
@@ -100,11 +128,12 @@ for SYSTEMNAMESPACE in "${SYSTEMNAMESPACES[@]}"; do
   CONTAINERS=$(docker ps -a --filter name=$SYSTEMNAMESPACE --format "{{.Names}}")
   for CONTAINER in $CONTAINERS; do
     docker inspect $CONTAINER > $TMPDIR/k8s/podinspect/$CONTAINER 2>&1
-    docker logs -t $CONTAINER > $TMPDIR/k8s/podlogs/$CONTAINER 2>&1
+    docker logs $DOCKER_LOGOPTS -t $CONTAINER > $TMPDIR/k8s/podlogs/$CONTAINER 2>&1
   done
 done
 
 # K8s directory state
+echo "Collecting k8s directory state"
 mkdir -p $TMPDIR/k8s/directories
 if [ -d /opt/rke/etc/kubernetes/ssl ]; then
   find /opt/rke/etc/kubernetes/ssl -type f -exec ls -la {} \; > $TMPDIR/k8s/directories/findoptrkeetckubernetesssl 2>&1
@@ -113,6 +142,7 @@ elif [ -d /etc/kubernetes/ssl ]; then
 fi
 
 # K8s certs
+echo "Collecting k8s certificates"
 mkdir -p $TMPDIR/k8s/certs
 if [ -d /opt/rke/etc/kubernetes/ssl ]; then
   CERTS=$(find /opt/rke/etc/kubernetes/ssl -type f -name *.pem | grep -v "\-key\.pem$")
@@ -141,6 +171,7 @@ elif [ -d /etc/kubernetes/ssl ]; then
 fi
 
 # etcd
+echo "Collecting etcd info"
 mkdir -p $TMPDIR/etcd
 # /var/lib/etcd contents
 if [ -d /var/lib/etcd ]; then
@@ -150,23 +181,27 @@ elif [ -d /opt/rke/var/lib/etcd ]; then
 fi
 
 # nginx-proxy
+echo "Collecting nginx-proxy info"
 if docker inspect nginx-proxy >/dev/null 2>&1; then
   mkdir -p $TMPDIR/k8s/nginx-proxy
   docker exec nginx-proxy cat /etc/nginx/nginx.conf > $TMPDIR/k8s/nginx-proxy/nginx.conf 2>&1
 fi
 
 # /opt/rke contents
+echo "Collecting rke snapshot info"
 if [ -d /opt/rke/etcd-snapshots ]; then
   find /opt/rke/etcd-snapshots -type f -exec ls -la {} \; > $TMPDIR/etcd/findoptrkeetcdsnaphots 2>&1
 fi
 
+FILEDIR=$(dirname $TMPDIR)
 FILENAME="$(hostname)-$(date +'%Y-%m-%d_%H_%M_%S').tar"
-tar cf /tmp/$FILENAME -C ${TMPDIR}/ .
+tar cf $FILEDIR/$FILENAME -C ${TMPDIR}/ .
 
 if $(command -v gzip >/dev/null 2>&1); then
-  gzip /tmp/${FILENAME}
+  echo "Compressing archive to ${FILEDIR}/${FILENAME}.gz"
+  gzip ${FILEDIR}/${FILENAME}
   FILENAME="${FILENAME}.gz"
 fi
 
-echo "Created /tmp/${FILENAME}"
+echo "Created ${FILEDIR}/${FILENAME}"
 echo "You can now remove ${TMPDIR}"
