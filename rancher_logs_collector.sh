@@ -112,6 +112,20 @@ elif [ -d /etc/kubernetes/ssl ]; then
   find /etc/kubernetes/ssl -type f -exec ls -la {} \; > $TMPDIR/k8s/directories/findetckubernetesssl 2>&1
 fi
 
+# K8s certs
+mkdir -p $TMPDIR/k8s/certs
+if [ -d /opt/rke/etc/kubernetes/ssl ]; then
+  CERTS=$(find /opt/rke/etc/kubernetes/ssl -type f -name *.pem | grep -v key)
+  for CERT in $CERTS; do
+    openssl x509 -in $CERT -text -noout > $TMPDIR/k8s/certs/$(basename $CERT)
+  done
+elif [ -d /etc/kubernetes/ssl ]; then
+  CERTS=$(find /etc/kubernetes/ssl -type f -name *.pem | grep -v key)
+  for CERT in $CERTS; do
+    openssl x509 -in $CERT -text -noout > $TMPDIR/k8s/certs/$(basename $CERT)
+  done
+fi
+
 # etcd
 mkdir -p $TMPDIR/etcd
 # /var/lib/etcd contents
