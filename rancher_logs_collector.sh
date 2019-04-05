@@ -117,6 +117,14 @@ mkdir -p $TMPDIR/etcd
 # /var/lib/etcd contents
 if [ -d /var/lib/etcd ]; then
   find /var/lib/etcd -type f -exec ls -la {} \; > $TMPDIR/etcd/findvarlibetcd 2>&1
+elif [ -d /opt/rke/var/lib/etcd ]; then
+  find /opt/rke/var/lib/etcd -type f -exec ls -la {} \; > $TMPDIR/etcd/findoptrkevarlibetcd 2>&1
+fi
+
+# nginx-proxy
+if docker inspect nginx-proxy >/dev/null 2>&1; then
+  mkdir -p $TMPDIR/k8s/nginx-proxy
+  docker exec nginx-proxy cat /etc/nginx/nginx.conf > $TMPDIR/k8s/nginx-proxy/nginx.conf 2>&1
 fi
 
 # /opt/rke contents
