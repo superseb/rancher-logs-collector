@@ -115,12 +115,12 @@ fi
 # K8s certs
 mkdir -p $TMPDIR/k8s/certs
 if [ -d /opt/rke/etc/kubernetes/ssl ]; then
-  CERTS=$(find /opt/rke/etc/kubernetes/ssl -type f -name *.pem | grep -v key)
+  CERTS=$(find /opt/rke/etc/kubernetes/ssl -type f -name *.pem | grep -v "\-key\.pem$")
   for CERT in $CERTS; do
     openssl x509 -in $CERT -text -noout > $TMPDIR/k8s/certs/$(basename $CERT) 2>&1
   done
 elif [ -d /etc/kubernetes/ssl ]; then
-  CERTS=$(find /etc/kubernetes/ssl -type f -name *.pem | grep -v key)
+  CERTS=$(find /etc/kubernetes/ssl -type f -name *.pem | grep -v "\-key\.pem$")
   for CERT in $CERTS; do
     openssl x509 -in $CERT -text -noout > $TMPDIR/k8s/certs/$(basename $CERT) 2>&1
   done
