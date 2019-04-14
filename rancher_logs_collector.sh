@@ -66,17 +66,25 @@ cp /var/log/syslog* /var/log/messages* /var/log/kern* /var/log/docker* /var/log/
 
 # Rancher logging
 # Discover any server or agent running
-mkdir -p $TMPDIR/rancher/containerinspect
-mkdir -p $TMPDIR/rancher/containerlogs
 RANCHERSERVERS=$(docker ps -a | grep -E "rancher/rancher:|rancher/rancher " | awk '{ print $1 }')
 RANCHERAGENTS=$(docker ps -a | grep -E "rancher/rancher-agent:|rancher/rancher-agent " | awk '{ print $1 }')
 
 for RANCHERSERVER in $RANCHERSERVERS; do
+  mkdir -p $TMPDIR/rancher/containerinspect
+  mkdir -p $TMPDIR/rancher/containerlogs
+  mkdir -p $TMPDIR/rancher/pprof
   docker inspect $RANCHERSERVER > $TMPDIR/rancher/containerinspect/server-$RANCHERSERVER 2>&1
   docker logs -t $RANCHERSERVER > $TMPDIR/rancher/containerlogs/server-$RANCHERSERVER 2>&1
+  docker exec $RANCHERSERVER curl -s http://127.0.0.1:6060/debug/pprof/goroutine > $TMPDIR/rancher/pprof/goroutine-$RANCHERSERVER 2>&1
+  docker exec $RANCHERSERVER curl -s http://127.0.0.1:6060/debug/pprof/heap > $TMPDIR/rancher/pprof/heap-$RANCHERSERVER 2>&1
+  docker exec $RANCHERSERVER curl -s http://127.0.0.1:6060/debug/pprof/threadcreate > $TMPDIR/rancher/pprof/threadcreate-$RANCHERSERVER 2>&1
+  docker exec $RANCHERSERVER curl -s http://127.0.0.1:6060/debug/pprof/block > $TMPDIR/rancher/pprof/block-$RANCHERSERVER 2>&1
+  docker exec $RANCHERSERVER curl -s http://127.0.0.1:6060/debug/pprof/mutex > $TMPDIR/rancher/pprof/mutex-$RANCHERSERVER 2>&1
 done
 
 for RANCHERAGENT in $RANCHERAGENTS; do
+  mkdir -p $TMPDIR/rancher/containerinspect
+  mkdir -p $TMPDIR/rancher/containerlogs
   docker inspect $RANCHERAGENT > $TMPDIR/rancher/containerinspect/agent-$RANCHERAGENT 2>&1
   docker logs -t $RANCHERAGENT > $TMPDIR/rancher/containerlogs/agent-$RANCHERAGENT 2>&1
 done
