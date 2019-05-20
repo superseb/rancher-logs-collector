@@ -12,7 +12,7 @@ cat /etc/resolv.conf > $TMPDIR/systeminfo/etcresolvconf 2>&1
 date > $TMPDIR/systeminfo/date 2>&1
 free -m > $TMPDIR/systeminfo/freem 2>&1
 uptime > $TMPDIR/systeminfo/uptime 2>&1
-dmesg > $TMPDIR/systeminfo/dmesg 2>&1
+dmesg -T > $TMPDIR/systeminfo/dmesg 2>&1
 df -h > $TMPDIR/systeminfo/dfh 2>&1
 if df -i >/dev/null 2>&1; then
   df -i > $TMPDIR/systeminfo/dfi 2>&1
