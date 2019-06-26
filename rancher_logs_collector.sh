@@ -180,17 +180,34 @@ elif [ -d /opt/rke/var/lib/etcd ]; then
   find /opt/rke/var/lib/etcd -type f -exec ls -la {} \; > $TMPDIR/etcd/findoptrkevarlibetcd 2>&1
 fi
 
+# /opt/rke contents
+if [ -d /opt/rke/etcd-snapshots ]; then
+  find /opt/rke/etcd-snapshots -type f -exec ls -la {} \; > $TMPDIR/etcd/findoptrkeetcdsnaphots 2>&1
+fi
+
+# etcd
+if docker ps --format='{{.Names}}' | grep -q ^etcd$ >/dev/null 2>&1; then
+  echo "Collecting etcdctl output"
+  PARAM=""
+  # Check for older versions with incorrectly set ETCDCTL_ENDPOINT vs the correct ETCDCTL_ENDPOINTS
+  # If ETCDCTL_ENDPOINTS is empty, its an older version
+  if [ -z $(docker exec etcd printenv ETCDCTL_ENDPOINTS) ]; then
+    ENDPOINT=$(docker exec etcd printenv ETCDCTL_ENDPOINT)
+    if echo $ENDPOINT | grep -vq 0.0.0.0; then
+      PARAM="--endpoints=$(docker exec etcd printenv ETCDCTL_ENDPOINT)"
+    fi
+  fi
+  docker exec etcd sh -c "etcdctl $PARAM member list"  > $TMPDIR/etcd/memberlist 2>&1
+  docker exec etcd etcdctl endpoint status --endpoints=$(docker exec etcd /bin/sh -c "etcdctl $PARAM member list | cut -d, -f5 | sed -e 's/ //g' | paste -sd ','") --write-out table > $TMPDIR/etcd/endpointstatus 2>&1
+  docker exec etcd etcdctl endpoint health --endpoints=$(docker exec etcd /bin/sh -c "etcdctl $PARAM member list | cut -d, -f5 | sed -e 's/ //g' | paste -sd ','") > $TMPDIR/etcd/endpointhealth 2>&1
+  docker exec etcd sh -c "etcdctl $PARAM alarm list" > $TMPDIR/etcd/alarmlist 2>&1
+fi
+
 # nginx-proxy
 echo "Collecting nginx-proxy info"
 if docker inspect nginx-proxy >/dev/null 2>&1; then
   mkdir -p $TMPDIR/k8s/nginx-proxy
   docker exec nginx-proxy cat /etc/nginx/nginx.conf > $TMPDIR/k8s/nginx-proxy/nginx.conf 2>&1
-fi
-
-# /opt/rke contents
-echo "Collecting rke snapshot info"
-if [ -d /opt/rke/etcd-snapshots ]; then
-  find /opt/rke/etcd-snapshots -type f -exec ls -la {} \; > $TMPDIR/etcd/findoptrkeetcdsnaphots 2>&1
 fi
 
 FILEDIR=$(dirname $TMPDIR)
