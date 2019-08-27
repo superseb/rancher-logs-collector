@@ -113,7 +113,7 @@ mkdir -p $TMPDIR/k8s/containerlogs
 mkdir -p $TMPDIR/k8s/containerinspect
 KUBECONTAINERS=(etcd etcd-rolling-snapshots kube-apiserver kube-controller-manager kubelet kube-scheduler kube-proxy nginx-proxy)
 for KUBECONTAINER in "${KUBECONTAINERS[@]}"; do
-  if [ "$(docker ps -q -f name=$KUBECONTAINER)" ]; then
+  if [ "$(docker ps -a -q -f name=$KUBECONTAINER)" ]; then
           docker inspect $KUBECONTAINER > $TMPDIR/k8s/containerinspect/$KUBECONTAINER 2>&1
 	  docker logs $DOCKER_LOGOPTS -t $KUBECONTAINER > $TMPDIR/k8s/containerlogs/$KUBECONTAINER 2>&1
   fi
