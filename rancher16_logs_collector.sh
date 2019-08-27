@@ -87,7 +87,7 @@ for RANCHERAGENT in $RANCHERAGENTS; do
 done
 
 # Infastructure/System stack containers
-for INFRACONTAINER in $(docker ps --filter label=io.rancher.container.system=true --format "{{.Names}}"); do
+for INFRACONTAINER in $(docker ps -a --filter label=io.rancher.container.system=true --format "{{.Names}}"); do
   mkdir -p $TMPDIR/infrastacks/containerlogs
   mkdir -p $TMPDIR/infrastacks/containerinspect
   docker inspect $INFRACONTAINER > $TMPDIR/infrastacks/containerinspect/$INFRACONTAINER 2>&1
